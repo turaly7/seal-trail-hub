@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
+import { demoTenants } from '@/data/demoData';
 import { toast } from 'sonner';
 
 interface AddSealDialogProps {
@@ -13,7 +15,9 @@ interface AddSealDialogProps {
 }
 
 export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange }) => {
+  const { user } = useAuth();
   const [objectType, setObjectType] = useState<string>('');
+  const [tenantId, setTenantId] = useState<string>('');
   const [sealNumber, setSealNumber] = useState('');
   const [objectName, setObjectName] = useState('');
   const [objectNumber, setObjectNumber] = useState('');
@@ -25,14 +29,18 @@ export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!sealNumber || !objectType || !objectName || !location) {
+    if (!sealNumber || !objectType || !objectName || !location || (user?.role === 'admin' && !tenantId)) {
       toast.error('Xahiş edirik bütün mütləq sahələri doldurun');
       return;
     }
 
     // Demo məqsədilə sadəcə toast göstəririk
+    const selectedTenant = user?.role === 'admin' 
+      ? demoTenants.find(t => t.id === tenantId)?.name 
+      : 'Cari filial';
+      
     toast.success(`Yeni plomb əlavə edildi: ${sealNumber}`, {
-      description: `${objectType} - ${objectName}`
+      description: `${objectType} - ${objectName} (${selectedTenant})`
     });
     
     // Formu təmizlə
@@ -44,21 +52,41 @@ export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange
     setLocation('');
     setNotes('');
     setObjectType('');
+    setTenantId('');
     
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Yeni plomb əlavə et</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Yeni plomb əlavə et</DialogTitle>
           <DialogDescription>
-            Obyekt növünü seçdikdən sonra müvafiq sahələr görünəcək
+            Plomb məlumatlarını daxil edin. Admin olaraq filial seçimi mütləqdir.
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Admin filial seçimi */}
+          {user?.role === 'admin' && (
+            <div className="space-y-2">
+              <Label htmlFor="tenant">Filial *</Label>
+              <Select value={tenantId} onValueChange={setTenantId} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filial seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {demoTenants.map(tenant => (
+                    <SelectItem key={tenant.id} value={tenant.id}>
+                      {tenant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="sealNumber">Plomb № *</Label>
