@@ -6,12 +6,12 @@ import { demoSeals } from '@/data/demoData';
 import { AddSealDialog } from './AddSealDialog';
 import { StatCards } from './StatCards';
 import { SealsTable } from './SealsTable';
-import { ChartSection } from './ChartSection';
+import { AdvancedAnalytics } from './AdvancedAnalytics';
 import { 
   Plus, 
   Scan, 
   LogOut,
-  Shield,
+  QrCode,
   User,
   BarChart3,
   Table,
@@ -93,7 +93,7 @@ export const Dashboard = () => {
                 {/* Modern Logo */}
                 <div className="relative">
                   <div className="p-3 rounded-xl gradient-primary pulse-glow animate-rotate-in">
-                    <Shield className="h-8 w-8 text-white" />
+                    <QrCode className="h-8 w-8 text-white" />
                   </div>
                   <div className="absolute -top-1 -right-1 p-1 bg-accent rounded-full animate-bounce-in" style={{animationDelay: '0.3s'}}>
                     <Sparkles className="h-3 w-3 text-white" />
@@ -133,7 +133,7 @@ export const Dashboard = () => {
                 <div className="relative">
                   {user?.role === 'admin' ? (
                     <div className="p-2 gradient-primary rounded-lg">
-                      <Shield className="h-4 w-4 text-white" />
+                      <QrCode className="h-4 w-4 text-white" />
                     </div>
                   ) : (
                     <div className="p-2 bg-muted rounded-lg">
@@ -258,7 +258,7 @@ export const Dashboard = () => {
 
             {/* Mini Charts Preview */}
             <div className="animate-fade-in" style={{animationDelay: '0.6s'}}>
-              <ChartSection userRole={user?.role || 'user'} />
+              <AdvancedAnalytics userRole={user?.role || 'user'} />
             </div>
           </div>
         )}
@@ -293,7 +293,7 @@ export const Dashboard = () => {
               <StatCards data={sealStats} />
             </div>
             <div className="animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <ChartSection userRole={user?.role || 'user'} />
+              <AdvancedAnalytics userRole={user?.role || 'user'} />
             </div>
           </div>
         )}
