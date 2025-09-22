@@ -16,6 +16,7 @@ export interface Seal {
   sealNumber: string;
   objectType: 'техника' | 'чəн/капы' | 'дигəр';
   objectName: string;
+  equipmentNumber?: string; // Texnika üçün əsas avadanlıq nömrəsi
   objectNumber?: string;
   deviceSerial?: string;
   techModel?: string;

@@ -20,11 +20,13 @@ export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange
   const [tenantId, setTenantId] = useState<string>('');
   const [sealNumber, setSealNumber] = useState('');
   const [objectName, setObjectName] = useState('');
+  const [equipmentNumber, setEquipmentNumber] = useState('');
   const [objectNumber, setObjectNumber] = useState('');
   const [deviceSerial, setDeviceSerial] = useState('');
   const [techModel, setTechModel] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
+  const [additionalSeals, setAdditionalSeals] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +48,7 @@ export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange
     // Formu təmizlə
     setSealNumber('');
     setObjectName('');
+    setEquipmentNumber('');
     setObjectNumber('');
     setDeviceSerial('');
     setTechModel('');
@@ -53,6 +56,7 @@ export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange
     setNotes('');
     setObjectType('');
     setTenantId('');
+    setAdditionalSeals([]);
     
     onOpenChange(false);
   };
@@ -61,7 +65,7 @@ export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Yeni plomb əlavə et</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Mobile appla avtomatik əlavə et</DialogTitle>
           <DialogDescription>
             Plomb məlumatlarını daxil edin. Admin olaraq filial seçimi mütləqdir.
           </DialogDescription>
@@ -126,24 +130,75 @@ export const AddSealDialog: React.FC<AddSealDialogProps> = ({ open, onOpenChange
           </div>
 
           {objectType === 'техника' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="techModel">Model</Label>
+                <Label htmlFor="equipmentNumber">Əsas texnikanın nömrəsi *</Label>
                 <Input
-                  id="techModel"
-                  value={techModel}
-                  onChange={(e) => setTechModel(e.target.value)}
-                  placeholder="GT-200"
+                  id="equipmentNumber"
+                  value={equipmentNumber}
+                  onChange={(e) => setEquipmentNumber(e.target.value)}
+                  placeholder="EQ-001"
+                  required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="deviceSerial">GPS avadanlıq seriya №</Label>
-                <Input
-                  id="deviceSerial"
-                  value={deviceSerial}
-                  onChange={(e) => setDeviceSerial(e.target.value)}
-                  placeholder="GPS001"
-                />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="techModel">Model/Marka</Label>
+                  <Input
+                    id="techModel"
+                    value={techModel}
+                    onChange={(e) => setTechModel(e.target.value)}
+                    placeholder="Toyota-8FD25"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deviceSerial">GPS avadanlıq seriya №</Label>
+                  <Input
+                    id="deviceSerial"
+                    value={deviceSerial}
+                    onChange={(e) => setDeviceSerial(e.target.value)}
+                    placeholder="GPS001"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Əlavə plomblar</Label>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setAdditionalSeals([...additionalSeals, ''])}
+                  >
+                    + Plomb əlavə et
+                  </Button>
+                </div>
+                {additionalSeals.map((seal, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={seal}
+                      onChange={(e) => {
+                        const newSeals = [...additionalSeals];
+                        newSeals[index] = e.target.value;
+                        setAdditionalSeals(newSeals);
+                      }}
+                      placeholder={`Əlavə plomb ${index + 2}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newSeals = additionalSeals.filter((_, i) => i !== index);
+                        setAdditionalSeals(newSeals);
+                      }}
+                    >
+                      Sil
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
           )}

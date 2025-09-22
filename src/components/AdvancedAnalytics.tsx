@@ -1,380 +1,820 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Area, AreaChart } from 'recharts';
+import { AlertTriangle, TrendingUp, Clock, MapPin, Shield, Zap, Calendar, Users, Activity, Eye, AlertCircle } from 'lucide-react';
 import { demoSeals, demoTenants } from '@/data/demoData';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, 
-  Area, AreaChart, ScatterChart, Scatter
-} from 'recharts';
-import { 
-  Calendar, Clock, AlertTriangle, TrendingUp, MapPin,
-  Users, Activity, Zap, Shield, Target, Eye,
-  ChevronDown, ChevronUp, RefreshCw
-} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AdvancedAnalyticsProps {
   userRole: 'user' | 'admin';
 }
 
 export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({ userRole }) => {
-  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('month');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('daily');
 
-  // Time-based data generation
-  const generateTimeData = () => {
-    const now = new Date();
-    const data = [];
+  const getTenantName = (tenantId: string) => {
+    const tenant = demoTenants.find(t => t.id === tenantId);
+    return tenant?.name || 'Naməlum filial';
+  };
+
+  // Chart colors
+  const COLORS = {
+    primary: 'hsl(var(--primary))',
+    secondary: 'hsl(var(--secondary))',
+    accent: 'hsl(var(--accent))',
+    warning: 'hsl(var(--warning))',
+    destructive: 'hsl(var(--destructive))',
+    success: 'hsl(var(--success))',
+    muted: 'hsl(var(--muted))'
+  };
+
+  const CHART_COLORS = [COLORS.primary, COLORS.secondary, COLORS.accent, COLORS.warning, COLORS.destructive, COLORS.success];
+
+  // Daily data
+  const dailyData = Array.from({ length: 24 }, (_, i) => ({
+    hour: `${i}:00`,
+    placements: Math.floor(Math.random() * 10) + 1,
+    removals: Math.floor(Math.random() * 3),
+    checks: Math.floor(Math.random() * 8) + 2,
+    anomalies: Math.floor(Math.random() * 2)
+  }));
+
+  // Weekly data
+  const weeklyData = [
+    { day: 'B.e', placements: 45, removals: 8, checks: 67, anomalies: 2 },
+    { day: 'Ç.a', placements: 52, removals: 12, checks: 74, anomalies: 4 },
+    { day: 'Ç', placements: 38, removals: 6, checks: 58, anomalies: 1 },
+    { day: 'C.a', placements: 61, removals: 15, checks: 89, anomalies: 6 },
+    { day: 'C', placements: 48, removals: 9, checks: 72, anomalies: 3 },
+    { day: 'Ş', placements: 33, removals: 4, checks: 51, anomalies: 1 },
+    { day: 'B', placements: 28, removals: 3, checks: 42, anomalies: 0 }
+  ];
+
+  // Monthly data
+  const monthlyData = [
+    { month: 'Yanvar', placements: 1250, removals: 180, checks: 1890, anomalies: 24 },
+    { month: 'Fevral', placements: 1180, removals: 165, checks: 1750, anomalies: 18 },
+    { month: 'Mart', placements: 1420, removals: 210, checks: 2100, anomalies: 32 },
+    { month: 'Aprel', placements: 1350, removals: 195, checks: 1980, anomalies: 28 },
+    { month: 'May', placements: 1480, removals: 220, checks: 2150, anomalies: 35 },
+    { month: 'İyun', placements: 1320, removals: 185, checks: 1920, anomalies: 22 }
+  ];
+
+  const fakeSeals = useMemo(() => {
+    const sealGroups = new Map();
+    demoSeals.forEach(seal => {
+      const key = seal.sealNumber;
+      if (!sealGroups.has(key)) {
+        sealGroups.set(key, []);
+      }
+      sealGroups.get(key).push(seal);
+    });
     
-    if (timeFilter === 'day') {
-      for (let i = 23; i >= 0; i--) {
-        const time = new Date(now.getTime() - i * 60 * 60 * 1000);
-        data.push({
-          period: `${time.getHours()}:00`,
-          placements: Math.floor(Math.random() * 8) + 1,
-          removals: Math.floor(Math.random() * 3),
-          checks: Math.floor(Math.random() * 12) + 2,
-          anomalies: Math.floor(Math.random() * 2)
-        });
-      }
-    } else if (timeFilter === 'week') {
-      const days = ['B.e', 'Ç.a', 'Ç', 'C.a', 'C', 'Ş', 'B'];
-      for (let i = 6; i >= 0; i--) {
-        data.push({
-          period: days[6 - i],
-          placements: Math.floor(Math.random() * 50) + 10,
-          removals: Math.floor(Math.random() * 15) + 2,
-          checks: Math.floor(Math.random() * 80) + 20,
-          anomalies: Math.floor(Math.random() * 5)
-        });
-      }
-    } else {
-      const months = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'İyun'];
-      months.forEach(month => {
-        data.push({
-          period: month,
-          placements: Math.floor(Math.random() * 200) + 50,
-          removals: Math.floor(Math.random() * 50) + 10,
-          checks: Math.floor(Math.random() * 300) + 100,
-          anomalies: Math.floor(Math.random() * 15) + 2
+    return Array.from(sealGroups.entries())
+      .filter(([_, seals]) => seals.length > 1)
+      .map(([sealNumber, seals]) => ({
+        sealNumber,
+        locations: seals.map(s => `${getTenantName(s.tenantId)} (${s.location})`),
+        timeDiff: Math.abs(new Date(seals[1]?.createdAt).getTime() - new Date(seals[0]?.createdAt).getTime()) / (1000 * 60), // minutes
+        count: seals.length,
+        seals: seals
+      }));
+  }, []);
+
+  const detailedFakeSeals = useMemo(() => {
+    const fakeItems = [];
+    fakeSeals.forEach(fake => {
+      fake.seals.forEach((seal, index) => {
+        fakeItems.push({
+          id: seal.id,
+          sealNumber: seal.sealNumber,
+          objectName: seal.objectName,
+          location: `${getTenantName(seal.tenantId)} - ${seal.location}`,
+          createdAt: seal.createdAt,
+          suspicionLevel: fake.timeDiff < 30 ? 'Yüksək' : fake.timeDiff < 60 ? 'Orta' : 'Aşağı'
         });
       });
-    }
+    });
+    return fakeItems;
+  }, [fakeSeals]);
+
+  const frequentlyRemoved = useMemo(() => {
+    return demoSeals
+      .filter(seal => seal.status === 'ачылыб')
+      .reduce((acc, seal) => {
+        const key = `${seal.objectName}-${seal.tenantId}`;
+        if (!acc[key]) {
+          acc[key] = {
+            objectName: seal.objectName,
+            location: getTenantName(seal.tenantId),
+            count: 0,
+            lastRemoved: seal.lastChecked || seal.createdAt,
+            seals: []
+          };
+        }
+        acc[key].count++;
+        acc[key].seals.push(seal);
+        if (seal.lastChecked && seal.lastChecked > acc[key].lastRemoved) {
+          acc[key].lastRemoved = seal.lastChecked;
+        }
+        return acc;
+      }, {} as Record<string, any>);
+  }, []);
+
+  const detailedFrequentlyRemoved = useMemo(() => {
+    return Object.values(frequentlyRemoved)
+      .filter((item: any) => item.count >= 2)
+      .flatMap((item: any) => 
+        item.seals.map((seal: any) => ({
+          id: seal.id,
+          sealNumber: seal.sealNumber,
+          objectName: seal.objectName,
+          location: `${getTenantName(seal.tenantId)} - ${seal.location}`,
+          removedAt: seal.lastChecked || seal.createdAt,
+          totalRemovals: item.count
+        }))
+      )
+      .sort((a, b) => b.totalRemovals - a.totalRemovals);
+  }, [frequentlyRemoved]);
+
+  const anomalies = useMemo(() => {
+    return demoSeals
+      .filter(seal => {
+        if (!seal.lastChecked) return false;
+        const timeDiff = (seal.lastChecked.getTime() - seal.createdAt.getTime()) / (1000 * 60); // minutes
+        return timeDiff < 60; // Less than 1 hour
+      })
+      .map(seal => ({
+        id: seal.id,
+        sealNumber: seal.sealNumber,
+        objectName: seal.objectName,
+        location: `${getTenantName(seal.tenantId)} - ${seal.location}`,
+        timeDiff: (seal.lastChecked!.getTime() - seal.createdAt.getTime()) / (1000 * 60),
+        createdAt: seal.createdAt,
+        removedAt: seal.lastChecked!,
+        severity: (seal.lastChecked!.getTime() - seal.createdAt.getTime()) / (1000 * 60) < 30 ? 'Kritik' : 'Yüksək'
+      }))
+      .sort((a, b) => a.timeDiff - b.timeDiff);
+  }, []);
+
+  const recentlyChecked = useMemo(() => {
+    return demoSeals
+      .filter(seal => seal.status === 'йохланыб')
+      .sort((a, b) => (b.lastChecked || b.createdAt).getTime() - (a.lastChecked || a.createdAt).getTime())
+      .slice(0, 10)
+      .map(seal => ({
+        id: seal.id,
+        sealNumber: seal.sealNumber,
+        objectName: seal.objectName,
+        location: `${getTenantName(seal.tenantId)} - ${seal.location}`,
+        checkedAt: seal.lastChecked || seal.createdAt
+      }));
+  }, []);
+
+  const recentlyRemoved = useMemo(() => {
+    return demoSeals
+      .filter(seal => seal.status === 'ачылыб')
+      .sort((a, b) => (b.lastChecked || b.createdAt).getTime() - (a.lastChecked || a.createdAt).getTime())
+      .slice(0, 10)
+      .map(seal => ({
+        id: seal.id,
+        sealNumber: seal.sealNumber,
+        objectName: seal.objectName,
+        location: `${getTenantName(seal.tenantId)} - ${seal.location}`,
+        removedAt: seal.lastChecked || seal.createdAt
+      }));
+  }, []);
+
+  const recentlyCheckedBranches = useMemo(() => {
+    const branchActivity = demoTenants.map(tenant => {
+      const tenantSeals = demoSeals.filter(seal => seal.tenantId === tenant.id);
+      const lastActivity = tenantSeals.reduce((latest, seal) => {
+        const activityDate = seal.lastChecked || seal.createdAt;
+        return activityDate > latest ? activityDate : latest;
+      }, new Date(0));
+      
+      return {
+        tenantId: tenant.id,
+        name: tenant.name,
+        location: tenant.location,
+        lastActivity,
+        totalSeals: tenantSeals.length,
+        activeSeals: tenantSeals.filter(s => s.status === 'мөhүрлү').length
+      };
+    }).sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime());
     
-    return data;
-  };
-
-  const timeData = generateTimeData();
-
-  // Anomaly detection data
-  const anomalyData = [
-    {
-      type: 'Saxta plomblar',
-      count: 12,
-      severity: 'high',
-      description: 'Eyni ID-li plomblar müxtəlif yerlərdə 30 dəq ərzində qeydiyyat'
-    },
-    {
-      type: 'Tez-tez açılan',
-      count: 8,
-      severity: 'medium',
-      description: 'Son həftədə 3+ dəfə açılan qapı/avadanlıq'
-    },
-    {
-      type: 'Vaxt fərqləri',
-      count: 5,
-      severity: 'low',
-      description: 'Qoyulma və çıxarılma vaxtları arasında qeyri-adi fərqlər'
-    },
-    {
-      type: 'Coğrafi anomaliya',
-      count: 3,
-      severity: 'high',
-      description: 'Eyni istifadəçi, eyni vaxtda müxtəlif filiallar'
-    }
-  ];
-
-  // Recent activity data
-  const recentlyCheckedBranches = demoTenants.slice(0, 3).map(tenant => ({
-    name: tenant.name,
-    location: tenant.location,
-    lastCheck: `${Math.floor(Math.random() * 24)} saat əvvəl`,
-    status: Math.random() > 0.3 ? 'normal' : 'attention'
-  }));
-
-  const recentSeals = demoSeals.slice(0, 5).map(seal => ({
-    ...seal,
-    timeAgo: `${Math.floor(Math.random() * 120)} dəq əvvəl`,
-    action: Math.random() > 0.5 ? 'checked' : 'removed'
-  }));
-
-  // Frequently accessed items
-  const frequentlyAccessed = [
-    { item: 'Ana giriş qapısı', count: 23, risk: 'high' },
-    { item: 'Server otağı', count: 18, risk: 'medium' },
-    { item: 'Kassa aparatı', count: 15, risk: 'low' },
-    { item: 'Arxiv şkafı', count: 12, risk: 'medium' },
-    { item: 'Yanacaq çəni', count: 8, risk: 'high' }
-  ];
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'hsl(var(--destructive))';
-      case 'medium': return 'hsl(var(--warning))';
-      case 'low': return 'hsl(var(--success))';
-      default: return 'hsl(var(--muted))';
-    }
-  };
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'high': return 'bg-destructive/20 text-destructive';
-      case 'medium': return 'bg-warning/20 text-warning';
-      case 'low': return 'bg-success/20 text-success';
-      default: return 'bg-muted/20 text-muted-foreground';
-    }
-  };
+    return branchActivity.slice(0, 10);
+  }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Header with Time Filters */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Təkmil Analitika Hub
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+            Analitika Hub
           </h2>
-          <p className="text-muted-foreground">Anomaliya aşkarlama və məlumat intellekti</p>
+          <p className="text-muted-foreground mt-1">Təkmil analitika və anomaliya aşkarlama sistemi</p>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <div className="flex bg-muted rounded-lg p-1">
-            {(['day', 'week', 'month'] as const).map((period) => (
-              <Button
-                key={period}
-                variant={timeFilter === period ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setTimeFilter(period)}
-                className="text-xs"
-              >
-                {period === 'day' ? 'Gün' : period === 'week' ? 'Həftə' : 'Ay'}
-              </Button>
-            ))}
-          </div>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-2">
+          <Activity className="h-5 w-5 text-primary animate-pulse" />
+          <Badge variant="outline" className="animate-bounce-in">
+            Canlı məlumat
+          </Badge>
         </div>
       </div>
 
-      {/* Time-based Activity Chart */}
-      <Card className="animate-fade-in">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-primary" />
-            <span>Vaxt ərzində fəaliyyət ({timeFilter === 'day' ? 'Saatlıq' : timeFilter === 'week' ? 'Həftəlik' : 'Aylıq'})</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
-            <AreaChart data={timeData}>
-              <defs>
-                <linearGradient id="colorPlacements" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
-                </linearGradient>
-                <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.1}/>
-                </linearGradient>
-                <linearGradient id="colorChecks" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0.1}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="period" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="placements"
-                stroke="hsl(var(--primary))"
-                fillOpacity={1}
-                fill="url(#colorPlacements)"
-                name="Yerləşdirilən"
-              />
-              <Area
-                type="monotone"
-                dataKey="removals"
-                stroke="hsl(var(--destructive))"
-                fillOpacity={1}
-                fill="url(#colorRemovals)"
-                name="Çıxarılan"
-              />
-              <Area
-                type="monotone"
-                dataKey="checks"
-                stroke="hsl(var(--success))"
-                fillOpacity={1}
-                fill="url(#colorChecks)"
-                name="Yoxlanılan"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Anomaly Detection */}
-      <Card className="animate-fade-in border-destructive/20">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            <span>Anomaliya Aşkarlama</span>
-            <div className="ml-auto bg-destructive/10 text-destructive px-2 py-1 rounded-full text-xs">
-              {anomalyData.reduce((sum, item) => sum + item.count, 0)} anomaliya
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {anomalyData.map((anomaly, index) => (
-              <div key={index} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium">{anomaly.type}</h4>
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: getSeverityColor(anomaly.severity) }}
-                    />
-                    <span className="text-sm font-bold">{anomaly.count}</span>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">{anomaly.description}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recently Checked Branches */}
-        {userRole === 'admin' && (
-          <Card className="animate-fade-in">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                <span>Son yoxlanılan filialar</span>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {/* Quick Stats Cards */}
+        <Card className="glass-effect border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-warning flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Saxta plomblar
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentlyCheckedBranches.map((branch, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">{branch.name}</h4>
-                      <p className="text-sm text-muted-foreground">{branch.location}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm">{branch.lastCheck}</p>
-                      <div className={`inline-flex px-2 py-1 rounded-full text-xs ${
-                        branch.status === 'normal' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'
-                      }`}>
-                        {branch.status === 'normal' ? 'Normal' : 'Diqqət'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              <Badge variant="destructive" className="animate-pulse">
+                {detailedFakeSeals.length}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {fakeSeals.slice(0, 3).map((fake, index) => (
+                <Alert key={index} className="border-warning/20 bg-warning/5">
+                  <AlertDescription className="text-xs">
+                    <strong>{fake.sealNumber}</strong><br/>
+                    {fake.locations.join(' və ')}<br/>
+                    <span className="text-muted-foreground">
+                      {fake.timeDiff < 30 ? '⚠️ Yüksək risk' : '⚡ Şübhəli'}
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              ))}
+              {fakeSeals.length > 3 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  və {fakeSeals.length - 3} daha çox...
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Recent Seal Activity */}
-        <Card className="animate-fade-in">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-primary" />
-              <span>Son plomb fəaliyyətləri</span>
-            </CardTitle>
+        <Card className="glass-effect border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-destructive flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Tez-tez çıxarılan
+              </CardTitle>
+              <Badge variant="secondary">
+                {detailedFrequentlyRemoved.length}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Object.values(frequentlyRemoved).slice(0, 3).map((item: any, index) => (
+                <Alert key={index} className="border-destructive/20 bg-destructive/5">
+                  <AlertDescription className="text-xs">
+                    <strong>{item.objectName}</strong><br/>
+                    {item.location}<br/>
+                    <span className="text-muted-foreground">
+                      {item.count} dəfə çıxarılıb
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              ))}
+              {Object.keys(frequentlyRemoved).length > 3 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  və {Object.keys(frequentlyRemoved).length - 3} daha çox...
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-effect border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-orange-500 flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Anomaliyalar
+              </CardTitle>
+              <Badge variant="outline" className="border-orange-500/50">
+                {anomalies.length}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {anomalies.slice(0, 3).map((anomaly, index) => (
+                <Alert key={index} className="border-orange-500/20 bg-orange-500/5">
+                  <AlertDescription className="text-xs">
+                    <strong>{anomaly.sealNumber}</strong><br/>
+                    {anomaly.objectName}<br/>
+                    <span className="text-muted-foreground">
+                      {Math.round(anomaly.timeDiff)} dəqiqə fərq - {anomaly.severity}
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              ))}
+              {anomalies.length > 3 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  və {anomalies.length - 3} daha çox...
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-effect border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Ümumi baxış
+              </CardTitle>
+              <Badge variant="default" className="animate-scale-in">
+                OK
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentSeals.map((seal, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${
-                      seal.action === 'checked' ? 'bg-success/20' : 'bg-destructive/20'
-                    }`}>
-                      {seal.action === 'checked' ? 
-                        <Eye className="h-4 w-4 text-success" /> : 
-                        <Target className="h-4 w-4 text-destructive" />
-                      }
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm">{seal.sealNumber}</h4>
-                      <p className="text-xs text-muted-foreground">{seal.objectName}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs">{seal.timeAgo}</p>
-                    <div className={`inline-flex px-2 py-1 rounded-full text-xs ${
-                      seal.action === 'checked' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
-                    }`}>
-                      {seal.action === 'checked' ? 'Yoxlandı' : 'Çıxarıldı'}
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Aktiv plomblar</span>
+                <span className="font-semibold text-success">{demoSeals.filter(s => s.status === 'мөhүрлү').length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Son yoxlanılan</span>
+                <span className="font-semibold">{demoSeals.filter(s => s.status === 'йохланыб').length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Çıxarılan</span>
+                <span className="font-semibold text-destructive">{demoSeals.filter(s => s.status === 'ачылыб').length}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Frequently Accessed Items */}
-      <Card className="animate-fade-in">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <span>Tez-tez əlaqə qurulan obyektlər</span>
+      <div className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="daily">Günlük</TabsTrigger>
+            <TabsTrigger value="weekly">Həftəlik</TabsTrigger>
+            <TabsTrigger value="monthly">Aylıq</TabsTrigger>
+            <TabsTrigger value="insights">İnkişaf</TabsTrigger>
+            <TabsTrigger value="details">Detallı</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="daily" className="space-y-6">
+            <Card className="glass-effect">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Günlük fəaliyyət (Saatlıq)
+                </CardTitle>
+                <CardDescription>Bugünkü plomb fəaliyyətlərinin saatlıq paylanması</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={dailyData}>
+                    <defs>
+                      <linearGradient id="colorPlacements" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.destructive} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={COLORS.destructive} stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="placements"
+                      stroke={COLORS.primary}
+                      fillOpacity={1}
+                      fill="url(#colorPlacements)"
+                      name="Yerləşdirilən"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="removals"
+                      stroke={COLORS.destructive}
+                      fillOpacity={1}
+                      fill="url(#colorRemovals)"
+                      name="Çıxarılan"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="weekly" className="space-y-6">
+            <Card className="glass-effect">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Həftəlik trend analizi
+                </CardTitle>
+                <CardDescription>Son həftədə plomb fəaliyyətlərinin dinamikası</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={weeklyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend />
+                    <Bar dataKey="placements" fill={COLORS.primary} name="Yerləşdirilən" />
+                    <Bar dataKey="removals" fill={COLORS.destructive} name="Çıxarılan" />
+                    <Bar dataKey="checks" fill={COLORS.success} name="Yoxlanılan" />
+                    <Bar dataKey="anomalies" fill={COLORS.warning} name="Anomaliyalar" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="monthly" className="space-y-6">
+            <Card className="glass-effect">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Aylıq statistika
+                </CardTitle>
+                <CardDescription>İlin ilk 6 ayının ümumi statistikası</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="placements" 
+                      stroke={COLORS.primary} 
+                      strokeWidth={3}
+                      name="Yerləşdirilən"
+                      dot={{ fill: COLORS.primary, strokeWidth: 2, r: 6 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="removals" 
+                      stroke={COLORS.destructive} 
+                      strokeWidth={3}
+                      name="Çıxarılan"
+                      dot={{ fill: COLORS.destructive, strokeWidth: 2, r: 6 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="checks" 
+                      stroke={COLORS.success} 
+                      strokeWidth={3}
+                      name="Yoxlanılan"
+                      dot={{ fill: COLORS.success, strokeWidth: 2, r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle>Status paylanması</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Möhürlü', value: demoSeals.filter(s => s.status === 'мөhүрлү').length, fill: COLORS.success },
+                          { name: 'Yoxlanıb', value: demoSeals.filter(s => s.status === 'йохланыб').length, fill: COLORS.warning },
+                          { name: 'Açılıb', value: demoSeals.filter(s => s.status === 'ачылыб').length, fill: COLORS.destructive }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      />
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle>Obyekt növləri</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Texnika', value: demoSeals.filter(s => s.objectType === 'техника').length, fill: COLORS.primary },
+                          { name: 'Çən/Qapı', value: demoSeals.filter(s => s.objectType === 'чəн/капы').length, fill: COLORS.accent },
+                          { name: 'Digər', value: demoSeals.filter(s => s.objectType === 'дигəр').length, fill: COLORS.secondary }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      />
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {frequentlyAccessed.slice(0, isExpanded ? 5 : 3).map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
-                    <span className="text-sm font-bold text-primary">#{index + 1}</span>
+          </TabsContent>
+
+          <TabsContent value="details" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Saxta plomblar detallı */}
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-warning" />
+                    Saxta plomblar - Detallı məlumat
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-60 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Plomb №</TableHead>
+                          <TableHead>Obyekt</TableHead>
+                          <TableHead>Yer</TableHead>
+                          <TableHead>Risk</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {detailedFakeSeals.map((seal) => (
+                          <TableRow key={seal.id}>
+                            <TableCell className="font-mono text-xs">{seal.sealNumber}</TableCell>
+                            <TableCell className="text-xs">{seal.objectName}</TableCell>
+                            <TableCell className="text-xs">{seal.location}</TableCell>
+                            <TableCell>
+                              <Badge variant={seal.suspicionLevel === 'Yüksək' ? 'destructive' : seal.suspicionLevel === 'Orta' ? 'secondary' : 'outline'}>
+                                {seal.suspicionLevel}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
-                  <h4 className="font-medium">{item.item}</h4>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-bold">{item.count} dəfə</span>
-                  <div className={`px-2 py-1 rounded-full text-xs ${getRiskColor(item.risk)}`}>
-                    {item.risk === 'high' ? 'Yüksək risk' : item.risk === 'medium' ? 'Orta risk' : 'Aşağı risk'}
+                </CardContent>
+              </Card>
+
+              {/* Tez-tez çıxarılan plomblar detallı */}
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-destructive" />
+                    Tez-tez çıxarılan plomblar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-60 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Plomb №</TableHead>
+                          <TableHead>Obyekt</TableHead>
+                          <TableHead>Yer</TableHead>
+                          <TableHead>Sayı</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {detailedFrequentlyRemoved.map((seal) => (
+                          <TableRow key={seal.id}>
+                            <TableCell className="font-mono text-xs">{seal.sealNumber}</TableCell>
+                            <TableCell className="text-xs">{seal.objectName}</TableCell>
+                            <TableCell className="text-xs">{seal.location}</TableCell>
+                            <TableCell>
+                              <Badge variant={seal.totalRemovals >= 5 ? 'destructive' : 'secondary'}>
+                                {seal.totalRemovals}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                </CardContent>
+              </Card>
+
+              {/* Anomaliyalar detallı */}
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-orange-500" />
+                    Anomaliyalar - Detallı məlumat
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-60 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Plomb №</TableHead>
+                          <TableHead>Obyekt</TableHead>
+                          <TableHead>Yer</TableHead>
+                          <TableHead>Fərq</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {anomalies.map((anomaly) => (
+                          <TableRow key={anomaly.id}>
+                            <TableCell className="font-mono text-xs">{anomaly.sealNumber}</TableCell>
+                            <TableCell className="text-xs">{anomaly.objectName}</TableCell>
+                            <TableCell className="text-xs">{anomaly.location}</TableCell>
+                            <TableCell>
+                              <Badge variant={anomaly.severity === 'Kritik' ? 'destructive' : 'secondary'}>
+                                {Math.round(anomaly.timeDiff)}m
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Son yoxlanılan filiallar */}
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Son yoxlanılan filiallar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-60 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Filial</TableHead>
+                          <TableHead>Yer</TableHead>
+                          <TableHead>Son aktivlik</TableHead>
+                          <TableHead>Aktiv plomblar</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentlyCheckedBranches.map((branch) => (
+                          <TableRow key={branch.tenantId}>
+                            <TableCell className="text-xs font-medium">{branch.name}</TableCell>
+                            <TableCell className="text-xs">{branch.location}</TableCell>
+                            <TableCell className="text-xs">
+                              {branch.lastActivity.toLocaleDateString('az-AZ', { 
+                                day: '2-digit', 
+                                month: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {branch.activeSeals}/{branch.totalSeals}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Son yoxlanılan plomblar */}
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-primary" />
+                    Son yoxlanılan plomblar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-60 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Plomb №</TableHead>
+                          <TableHead>Obyekt</TableHead>
+                          <TableHead>Yer</TableHead>
+                          <TableHead>Tarix</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentlyChecked.map((seal) => (
+                          <TableRow key={seal.id}>
+                            <TableCell className="font-mono text-xs">{seal.sealNumber}</TableCell>
+                            <TableCell className="text-xs">{seal.objectName}</TableCell>
+                            <TableCell className="text-xs">{seal.location}</TableCell>
+                            <TableCell className="text-xs">
+                              {seal.checkedAt.toLocaleDateString('az-AZ', { 
+                                day: '2-digit', 
+                                month: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Son çıxarılan plomblar */}
+              <Card className="glass-effect">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    Son çıxarılan plomblar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="max-h-60 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Plomb №</TableHead>
+                          <TableHead>Obyekt</TableHead>
+                          <TableHead>Yer</TableHead>
+                          <TableHead>Tarix</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentlyRemoved.map((seal) => (
+                          <TableRow key={seal.id}>
+                            <TableCell className="font-mono text-xs">{seal.sealNumber}</TableCell>
+                            <TableCell className="text-xs">{seal.objectName}</TableCell>
+                            <TableCell className="text-xs">{seal.location}</TableCell>
+                            <TableCell className="text-xs">
+                              {seal.removedAt.toLocaleDateString('az-AZ', { 
+                                day: '2-digit', 
+                                month: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
